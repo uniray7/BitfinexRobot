@@ -1,4 +1,5 @@
-import os, sys, time
+import os, sys
+from datetime import datetime
 import asyncio
 import requests
 import json
@@ -18,6 +19,8 @@ bfx = Client(
 # event type
 FUNDING_ORDER_CANCEL = 'foc'
 HEARTBEAT = 'hb'
+FUNDING_CREDIT_CLOSED = 'fcc'
+
 
 if API_KEY == None or API_SECRET == None:
   print("API_KEY and API_SECRET should not be None")
@@ -32,9 +35,9 @@ if SLACK_URL == None:
 @bfx.ws.on('wallet_update')
 def wallet_update(wallet):
   print ("Balance updates: {}".format(wallet))
-  now = time.time.now()
+  now = datetime.now()
   msg = {
-    'time': time.strftime('%b %d %Y %H:%M:%S', now),
+    'time': now.strftime('%b %d %Y %H:%M:%S'),
     'event': 'wallet_update',
     'msg': str(wallet),
   }
@@ -58,7 +61,7 @@ def all(req):
   event_type = req[1]
   if event_type == FUNDING_ORDER_CANCEL:
     print("funding order canceled: {}".format(req))
-    now = time.time.now()
+    now = datetime.now()
     req_content = req[2]
     order_id = req_content[0]
     currency = req_content[1]
@@ -66,10 +69,30 @@ def all(req):
     day_range = req_content[-6]
     rate = req_content[-7]
     msg = {
-      'time': time.strftime('%b %d %Y %H:%M:%S', now),
+      'time': now.strftime('%b %d %Y %H:%M:%S'),
       'event': 'funding order canceled',
       'currency': currency,
       'day_range': day_range,
+      'amount': amount,
+      'rate': rate,
+    }
+    headers = {'Content-type': 'application/json'}
+    res = requests.post(SLACK_URL, data=json.dumps({'text': json.dumps(msg)}), headers=headers)
+  elif event_type == FUNDING_CREDIT_CLOSED:
+    print("funding closed: {}".format(req))
+    # [BfxWebsocket] [WARNING] Unknown data event: 'fcc' [0, 'fcc', [266591101, 'fUSD', 1, 1619483442000, 1619647782000, 2239.97346651, 0, 'CLOSED (expired)', 'FIXED', None, None, 0.00
+    # 034999, 2, 1619483442000, 1619656257000, None, 0, None, 0, None, 0, 'tBTCUSD']]
+
+    now = datetime.now()
+    req_content = req[2]
+    order_id = req_content[0]
+    currency = req_content[1]
+    amount = req_content[4]
+    rate = req_content[-11]
+    msg = {
+      'time': now.strftime('%b %d %Y %H:%M:%S'),
+      'event': 'funding expired',
+      'currency': currency,
       'amount': amount,
       'rate': rate,
     }
