@@ -19,7 +19,7 @@ bfx = Client(
 # event type
 FUNDING_ORDER_CANCEL = 'foc'
 HEARTBEAT = 'hb'
-FUNDING_CREDIT_CLOSED = 'fcc'
+FUNDING_LOAN_CLOSED = 'flc'
 
 
 if API_KEY == None or API_SECRET == None:
@@ -78,7 +78,7 @@ def all(req):
     }
     headers = {'Content-type': 'application/json'}
     res = requests.post(SLACK_URL, data=json.dumps({'text': json.dumps(msg)}), headers=headers)
-  elif event_type == FUNDING_CREDIT_CLOSED:
+  elif event_type == FUNDING_LOAN_CLOSED:
     print("funding closed: {}".format(req))
     # [BfxWebsocket] [WARNING] Unknown data event: 'fcc' [0, 'fcc', [266591101, 'fUSD', 1, 1619483442000, 1619647782000, 2239.97346651, 0, 'CLOSED (expired)', 'FIXED', None, None, 0.00
     # 034999, 2, 1619483442000, 1619656257000, None, 0, None, 0, None, 0, 'tBTCUSD']]
